@@ -13,6 +13,11 @@ import 'package:flutter/material.dart';
 // visible text in the app — labels, button, messages, categories,
 // plans, menus and the disclaimer. The BMI calculation, category
 // keys, colours, avatar images and layout are unchanged.
+//
+// Theme option (added 2026-11-11): Light / Dark toggle in the AppBar
+// (moon/sun button). Default is Light, keeping the approved MediClean
+// light look. Dark mode re-colours every surface and text through the
+// getters below; the teal accent stays the same in both modes.
 
 void main() {
   runApp(const MyApp());
@@ -60,9 +65,42 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   static const teal = Color(0xFF0D9488);
-  static const ink = Color(0xFF0F172A);
-  static const muted = Color(0xFF64748B);
-  static const cardBorder = Color(0xFFE2E8F0);
+
+  // ---- Theme: Light / Dark (default Light) ----
+  bool _isDark = false;
+
+  // Light colours are the approved MediClean look; dark colours are
+  // slate surfaces with light text so nothing is unreadable.
+  Color get bg => _isDark ? const Color(0xFF0F172A) : const Color(0xFFF6FAF9);
+  Color get cardColor => _isDark ? const Color(0xFF1E293B) : Colors.white;
+  Color get inkColor => _isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+  Color get mutedColor => _isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Color get borderColor => _isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+  Color get fieldFill => _isDark ? const Color(0xFF1E293B) : Colors.white;
+  Color get stepperBg => _isDark ? const Color(0xFF134E4A) : const Color(0xFFE6F4F2);
+  Color get avatarBg => _isDark ? const Color(0xFF134E4A) : const Color(0xFFE6F4F2);
+  Color get sliderInactive => _isDark ? const Color(0xFF334155) : const Color(0xFFD6E8E5);
+  Color get appBarBg => _isDark ? const Color(0xFF1E293B) : Colors.white;
+  Color get ringTrack => _isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+
+  /// Dark variant of a light plan-card tint, so tinted cards stay
+  /// readable in dark mode (light tint = light mode, dark tint = dark).
+  Color _darkTint(Color lightTint) {
+    if (!_isDark) return lightTint;
+    if (lightTint == const Color(0xFFE6F4F2)) return const Color(0xFF134E4A);
+    if (lightTint == const Color(0xFFECFDF5)) return const Color(0xFF14532D);
+    if (lightTint == const Color(0xFFFEF2F2)) return const Color(0xFF7F1D1D);
+    if (lightTint == const Color(0xFFFFFBEB)) return const Color(0xFF78350F);
+    return lightTint;
+  }
+
+  /// Brighter variant of a plan-card accent colour for dark mode.
+  Color _darkAccent(Color light) {
+    if (!_isDark) return light;
+    if (light == const Color(0xFF059669)) return const Color(0xFF34D399);
+    if (light == const Color(0xFFDC2626)) return const Color(0xFFF87171);
+    return light;
+  }
 
   final wtController = TextEditingController();
   final ftController = TextEditingController();
@@ -149,6 +187,20 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Color getCategoryColor(String cat) {
+    if (_isDark) {
+      switch (cat) {
+        case 'Underweight':
+          return const Color(0xFF60A5FA);
+        case 'Healthy weight':
+          return const Color(0xFF34D399);
+        case 'Overweight':
+          return const Color(0xFFFBBF24);
+        case 'Obesity':
+          return const Color(0xFFF87171);
+        default:
+          return const Color(0xFF2DD4BF);
+      }
+    }
     switch (cat) {
       case 'Underweight':
         return const Color(0xFF2563EB);
@@ -436,9 +488,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _softCard({required Widget child, Color? tint}) {
     return Container(
       decoration: BoxDecoration(
-        color: tint ?? Colors.white,
+        color: tint != null ? _darkTint(tint) : cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cardBorder),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -465,7 +517,7 @@ class _MyHomePageState extends State<MyHomePage> {
             color: selected ? teal : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: selected ? teal : cardBorder,
+              color: selected ? teal : borderColor,
             ),
           ),
           child: Text(
@@ -473,7 +525,7 @@ class _MyHomePageState extends State<MyHomePage> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : ink,
+              color: selected ? Colors.white : inkColor,
             ),
           ),
         ),
@@ -491,25 +543,25 @@ class _MyHomePageState extends State<MyHomePage> {
       children: [
         Expanded(
           child: Text(label,
-              style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
+              style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w600, color: inkColor)),
         ),
         IconButton.filledTonal(
           onPressed: onMinus,
           icon: const Icon(Icons.remove),
-          style: IconButton.styleFrom(backgroundColor: const Color(0xFFE6F4F2)),
+          style: IconButton.styleFrom(backgroundColor: stepperBg, foregroundColor: inkColor),
         ),
         SizedBox(
           width: 72,
           child: Text(value,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w700, color: inkColor)),
         ),
         IconButton.filledTonal(
           onPressed: onPlus,
           icon: const Icon(Icons.add),
-          style: IconButton.styleFrom(backgroundColor: const Color(0xFFE6F4F2)),
+          style: IconButton.styleFrom(backgroundColor: stepperBg, foregroundColor: inkColor),
         ),
       ],
     );
@@ -522,17 +574,18 @@ class _MyHomePageState extends State<MyHomePage> {
     required Color tint,
     required List<String> items,
   }) {
+    final c = _darkAccent(color);
     return _softCard(
       tint: tint,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(icon, color: color),
+            Icon(icon, color: c),
             const SizedBox(width: 8),
             Text(title,
                 style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+                    fontSize: 16, fontWeight: FontWeight.w700, color: c)),
           ]),
           const SizedBox(height: 10),
           ...items.map((e) => Padding(
@@ -540,11 +593,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.check_circle, size: 16, color: color),
+                    Icon(Icons.check_circle, size: 16, color: c),
                     const SizedBox(width: 6),
                     Expanded(
                         child: Text(e,
-                            style: const TextStyle(fontSize: 14, color: ink))),
+                            style: TextStyle(fontSize: 14, color: inkColor))),
                   ],
                 ),
               )),
@@ -566,18 +619,19 @@ class _MyHomePageState extends State<MyHomePage> {
         children: [
           CustomPaint(
             size: const Size(180, 180),
-            painter: _RingPainter(progress: progress, color: color),
+            painter: _RingPainter(
+                progress: progress, color: color, trackColor: ringTrack),
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 bmiValue == null ? '--' : bmi.toStringAsFixed(1),
-                style: const TextStyle(
-                    fontSize: 38, fontWeight: FontWeight.w800, color: ink),
+                style: TextStyle(
+                    fontSize: 38, fontWeight: FontWeight.w800, color: inkColor),
               ),
-              const Text('BMI',
-                  style: TextStyle(fontSize: 13, color: muted)),
+              Text('BMI',
+                  style: TextStyle(fontSize: 13, color: mutedColor)),
               if (category.isNotEmpty)
                 Container(
                   margin: const EdgeInsets.only(top: 6),
@@ -606,7 +660,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE6F4F2),
+        color: avatarBg,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -651,16 +705,17 @@ class _MyHomePageState extends State<MyHomePage> {
   InputDecoration _fieldDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
+      labelStyle: TextStyle(color: mutedColorColor),
       prefixIcon: Icon(icon, color: teal),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: fieldFill,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: cardBorder),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: cardBorder),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -681,14 +736,14 @@ class _MyHomePageState extends State<MyHomePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(tr('Check your BMI', 'Apna BMI check karein'),
-              style: const TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.w800, color: ink)),
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w800, color: inkColor)),
           Text(
               tr(
                 'Enter your weight and height — you can also change them with the slider.',
                 'Weight aur height daalein — slider se bhi badal sakte hain.',
               ),
-              style: const TextStyle(fontSize: 13, color: muted)),
+              style: TextStyle(fontSize: 13, color: mutedColor)),
           const SizedBox(height: 16),
           _stepperRow(
             label: tr('Weight', 'Wazan'),
@@ -707,6 +762,8 @@ class _MyHomePageState extends State<MyHomePage> {
             min: 30,
             max: 150,
             divisions: 120,
+            activeColor: teal,
+            inactiveColor: sliderInactive,
             label: '${weightSlider.toStringAsFixed(0)} kg',
             onChanged: (v) => setState(() {
               weightSlider = v;
@@ -716,6 +773,7 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 8),
           TextField(
             controller: wtController,
+            style: TextStyle(color: inkColorColor),
             decoration: _fieldDecoration(
                 tr('Enter your weight (in Kgs)', 'Apna wazan daalein (Kgs mein)'),
                 Icons.monitor_weight),
@@ -726,6 +784,7 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 12),
           TextField(
             controller: ftController,
+            style: TextStyle(color: inkColorColor),
             decoration: _fieldDecoration(
                 tr('Enter your height (in Feet)',
                     'Apni height daalein (Feet mein)'),
@@ -736,6 +795,7 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 12),
           TextField(
             controller: inController,
+            style: TextStyle(color: inkColorColor),
             decoration: _fieldDecoration(
                 tr('Enter your height (in Inches)',
                     'Apni height daalein (Inches mein)'),
@@ -753,14 +813,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   borderRadius: BorderRadius.circular(14)),
             ),
             child: Text(tr('Calculate BMI', 'BMI Calculate Karein'),
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
           ),
           if (result.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(result,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
+                style: TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600, color: inkColor)),
           ],
         ],
       ),
@@ -774,15 +834,15 @@ class _MyHomePageState extends State<MyHomePage> {
           if (bmiValue != null)
             Text(healthyRangeText(),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: muted)),
+                style: TextStyle(fontSize: 13, color: mutedColor)),
           const SizedBox(height: 16),
           _avatar(),
           if (planSteps.isNotEmpty) ...[
             const SizedBox(height: 18),
             Text(planTitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w800, color: ink)),
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w800, color: inkColor)),
             const SizedBox(height: 12),
             _planCard(
               title: tr('Plan', 'Plan'),
@@ -814,13 +874,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(tr('Sample 1-day menu', 'Sample 1-day menu'),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: ink)),
+                          color: inkColor)),
                   const SizedBox(height: 6),
                   Text(sampleMenu,
-                      style: const TextStyle(fontSize: 14, color: ink)),
+                      style: TextStyle(fontSize: 14, color: inkColor)),
                 ],
               ),
             ),
@@ -832,7 +892,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 'BMI sirf ek screening measure hai, diagnosis nahi. '
                 'Apne liye diet/exercise plan ke liye doctor se mashwara lein.',
               ),
-              style: const TextStyle(fontSize: 12, color: muted),
+              style: TextStyle(fontSize: 12, color: mutedColor),
               textAlign: TextAlign.center,
             ),
           ] else
@@ -846,7 +906,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   'category, avatar aur plan yahan dikhe ga.',
                 ),
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: muted),
+                style: TextStyle(color: mutedColor),
               ),
             ),
         ],
@@ -854,7 +914,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
+        backgroundColor: appBarBg,
+        foregroundColor: inkColor,
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -865,6 +928,16 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
         actions: [
+          IconButton(
+            onPressed: () => setState(() => _isDark = !_isDark),
+            icon: Icon(
+              _isDark ? Icons.light_mode : Icons.dark_mode,
+              color: inkColor,
+            ),
+            tooltip: _isDark
+                ? tr('Switch to light mode', 'Light mode karein')
+                : tr('Switch to dark mode', 'Dark mode karein'),
+          ),
           _langChip('English', !_isUrdu, () => _setLanguage(false)),
           _langChip('Roman Urdu', _isUrdu, () => _setLanguage(true)),
           const SizedBox(width: 8),
@@ -903,14 +976,16 @@ class _MyHomePageState extends State<MyHomePage> {
 class _RingPainter extends CustomPainter {
   final double progress;
   final Color color;
-  const _RingPainter({required this.progress, required this.color});
+  final Color trackColor;
+  const _RingPainter(
+      {required this.progress, required this.color, required this.trackColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 10;
     final bg = Paint()
-      ..color = const Color(0xFFE2E8F0)
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 14
       ..strokeCap = StrokeCap.round;
@@ -933,5 +1008,7 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) =>
-      old.progress != progress || old.color != color;
+      old.progress != progress ||
+      old.color != color ||
+      old.trackColor != trackColor;
 }
