@@ -705,7 +705,7 @@ class _MyHomePageState extends State<MyHomePage> {
   InputDecoration _fieldDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: mutedColorColor),
+      labelStyle: TextStyle(color: mutedColor),
       prefixIcon: Icon(icon, color: teal),
       filled: true,
       fillColor: fieldFill,
@@ -773,7 +773,7 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 8),
           TextField(
             controller: wtController,
-            style: TextStyle(color: inkColorColor),
+            style: TextStyle(color: inkColor),
             decoration: _fieldDecoration(
                 tr('Enter your weight (in Kgs)', 'Apna wazan daalein (Kgs mein)'),
                 Icons.monitor_weight),
@@ -784,7 +784,7 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 12),
           TextField(
             controller: ftController,
-            style: TextStyle(color: inkColorColor),
+            style: TextStyle(color: inkColor),
             decoration: _fieldDecoration(
                 tr('Enter your height (in Feet)',
                     'Apni height daalein (Feet mein)'),
@@ -795,7 +795,7 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 12),
           TextField(
             controller: inController,
-            style: TextStyle(color: inkColorColor),
+            style: TextStyle(color: inkColor),
             decoration: _fieldDecoration(
                 tr('Enter your height (in Inches)',
                     'Apni height daalein (Inches mein)'),
