@@ -1,4 +1,12 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+
+// MediClean UI — Design 2, approved by inam (2026-11-11).
+// White + teal health-app look: soft white cards, teal accent,
+// ring gauge for the BMI result, sliders/steppers for inputs,
+// full-body avatar image, and plan split into 3 cards.
+// Same BMI logic as before: weight kg, height ft+in,
+// BMI = kg / m^2, decimal inputs via double.tryParse.
 
 void main() {
   runApp(const MyApp());
@@ -9,12 +17,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const teal = Color(0xFF0D9488);
     return MaterialApp(
       title: 'BMI Calculator',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: teal,
+          primary: teal,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF6FAF9),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF0F172A),
+          elevation: 0,
+          centerTitle: true,
+        ),
+        sliderTheme: const SliderThemeData(
+          activeTrackColor: teal,
+          inactiveTrackColor: Color(0xFFD6E8E5),
+          thumbColor: teal,
+        ),
       ),
       home: const MyHomePage(),
     );
@@ -29,9 +53,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  static const teal = Color(0xFF0D9488);
+  static const ink = Color(0xFF0F172A);
+  static const muted = Color(0xFF64748B);
+  static const cardBorder = Color(0xFFE2E8F0);
+
   final wtController = TextEditingController();
   final ftController = TextEditingController();
   final inController = TextEditingController();
+
+  double weightSlider = 70;
+  double heightFtSlider = 5;
+  double heightInSlider = 7;
 
   String result = '';
   String category = '';
@@ -43,6 +76,14 @@ class _MyHomePageState extends State<MyHomePage> {
   double? bmiValue;
   double? heightM;
   double? weightKg;
+
+  @override
+  void initState() {
+    super.initState();
+    wtController.text = '70';
+    ftController.text = '5';
+    inController.text = '7';
+  }
 
   @override
   void dispose() {
@@ -62,15 +103,15 @@ class _MyHomePageState extends State<MyHomePage> {
   Color getCategoryColor(String cat) {
     switch (cat) {
       case 'Underweight':
-        return Colors.blue;
+        return const Color(0xFF2563EB);
       case 'Healthy weight':
-        return Colors.green;
+        return const Color(0xFF059669);
       case 'Overweight':
-        return Colors.orange;
+        return const Color(0xFFD97706);
       case 'Obesity':
-        return Colors.red;
+        return const Color(0xFFDC2626);
       default:
-        return Colors.blue;
+        return teal;
     }
   }
 
@@ -179,6 +220,15 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _syncSlidersFromFields() {
+    final w = double.tryParse(wtController.text.trim());
+    final f = double.tryParse(ftController.text.trim());
+    final i = double.tryParse(inController.text.trim());
+    if (w != null) weightSlider = w.clamp(30, 150);
+    if (f != null) heightFtSlider = f.clamp(3, 7);
+    if (i != null) heightInSlider = i.clamp(0, 11);
+  }
+
   void calculate() {
     final wt = wtController.text.trim();
     final ft = ftController.text.trim();
@@ -222,6 +272,7 @@ class _MyHomePageState extends State<MyHomePage> {
       bmiValue = bmi;
       result = 'Your BMI is ${bmi.toStringAsFixed(2)}';
       category = getCategory(bmi);
+      _syncSlidersFromFields();
       setPlan(bmi);
     });
   }
@@ -240,69 +291,209 @@ class _MyHomePageState extends State<MyHomePage> {
     return 'Healthy weight: ${low.toStringAsFixed(1)} – ${high.toStringAsFixed(1)} kg  •  $diff';
   }
 
-  Widget buildAvatar() {
-    // Real full-body strong-man avatar image (green tank top, blue pants,
-    // both arms flexing). Image changes with the category, with a smooth
-    // AnimatedSwitcher fade/scale animation. Underweight reuses the
-    // healthy image squeezed thin — see getAvatarAsset().
-    final color = getCategoryColor(category);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  // ---- MediClean widgets ----
+
+  Widget _softCard({required Widget child, Color? tint}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: tint ?? Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: child,
+    );
+  }
+
+  Widget _stepperRow({
+    required String label,
+    required String value,
+    required VoidCallback onMinus,
+    required VoidCallback onPlus,
+  }) {
+    return Row(
       children: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 600),
-          transitionBuilder: (child, animation) =>
-              ScaleTransition(scale: animation, child: child),
-          child: Transform.scale(
-            key: ValueKey(category),
-            scaleX: getAvatarScaleX(),
-            child: Image.asset(
-              getAvatarAsset(),
-              key: ValueKey(getAvatarAsset()),
-              height: 260,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const Icon(
-                Icons.person,
-                size: 120,
-                color: Colors.grey,
-              ),
-            ),
-          ),
+        Expanded(
+          child: Text(label,
+              style: const TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
         ),
-        const SizedBox(height: 8),
-        Text(
-          category.isEmpty ? 'Avatar — BMI ke hisaab se badle ga' : category,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
+        IconButton.filledTonal(
+          onPressed: onMinus,
+          icon: const Icon(Icons.remove),
+          style: IconButton.styleFrom(backgroundColor: const Color(0xFFE6F4F2)),
+        ),
+        SizedBox(
+          width: 72,
+          child: Text(value,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
+        ),
+        IconButton.filledTonal(
+          onPressed: onPlus,
+          icon: const Icon(Icons.add),
+          style: IconButton.styleFrom(backgroundColor: const Color(0xFFE6F4F2)),
         ),
       ],
     );
   }
 
-  Widget buildList(String title, List<String> items, IconData icon,
-      Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        const SizedBox(height: 4),
-        ...items.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(icon, size: 16, color: color),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(e)),
-                ],
+  Widget _planCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Color tint,
+    required List<String> items,
+  }) {
+    return _softCard(
+      tint: tint,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 8),
+            Text(title,
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+          ]),
+          const SizedBox(height: 10),
+          ...items.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.check_circle, size: 16, color: color),
+                    const SizedBox(width: 6),
+                    Expanded(
+                        child: Text(e,
+                            style: const TextStyle(fontSize: 14, color: ink))),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _ringGauge() {
+    final bmi = bmiValue ?? 0;
+    // Map BMI 14..40 onto the ring.
+    final progress = ((bmi - 14) / 26).clamp(0.0, 1.0);
+    final color = bmiValue == null ? teal : getCategoryColor(category);
+    return SizedBox(
+      width: 180,
+      height: 180,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size(180, 180),
+            painter: _RingPainter(progress: progress, color: color),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                bmiValue == null ? '--' : bmi.toStringAsFixed(1),
+                style: const TextStyle(
+                    fontSize: 38, fontWeight: FontWeight.w800, color: ink),
               ),
-            )),
-      ],
+              const Text('BMI',
+                  style: TextStyle(fontSize: 13, color: muted)),
+              if (category.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(category,
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: color)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _avatar() {
+    final color =
+        category.isEmpty ? teal : getCategoryColor(category);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6F4F2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 600),
+            transitionBuilder: (child, animation) =>
+                ScaleTransition(scale: animation, child: child),
+            child: Transform.scale(
+              key: ValueKey(category),
+              scaleX: getAvatarScaleX(),
+              child: Image.asset(
+                getAvatarAsset(),
+                key: ValueKey(getAvatarAsset()),
+                height: 220,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.person,
+                  size: 120,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            category.isEmpty
+                ? 'Avatar — BMI ke hisaab se badle ga'
+                : category,
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w700, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: teal),
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: cardBorder),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: cardBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: teal, width: 2),
+      ),
     );
   }
 
@@ -313,133 +504,178 @@ class _MyHomePageState extends State<MyHomePage> {
     final contentWidth = isWide ? 860.0 : 520.0;
     final padding = isWide ? 24.0 : 16.0;
 
-    final calculatorCard = Card(
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(padding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'BMI',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700),
+    final inputCard = _softCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Apna BMI check karein',
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w800, color: ink)),
+          const Text('Weight aur height daalein — slider se bhi badal sakte hain.',
+              style: TextStyle(fontSize: 13, color: muted)),
+          const SizedBox(height: 16),
+          _stepperRow(
+            label: 'Weight',
+            value: '${weightSlider.toStringAsFixed(0)} kg',
+            onMinus: () => setState(() {
+              weightSlider = (weightSlider - 1).clamp(30, 150);
+              wtController.text = weightSlider.toStringAsFixed(0);
+            }),
+            onPlus: () => setState(() {
+              weightSlider = (weightSlider + 1).clamp(30, 150);
+              wtController.text = weightSlider.toStringAsFixed(0);
+            }),
+          ),
+          Slider(
+            value: weightSlider,
+            min: 30,
+            max: 150,
+            divisions: 120,
+            label: '${weightSlider.toStringAsFixed(0)} kg',
+            onChanged: (v) => setState(() {
+              weightSlider = v;
+              wtController.text = v.toStringAsFixed(0);
+            }),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: wtController,
+            decoration: _fieldDecoration(
+                'Enter Your weight (in Kgs)', Icons.monitor_weight),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => _syncSlidersFromFields(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: ftController,
+            decoration:
+                _fieldDecoration('Enter Your Height (in Feet)', Icons.height),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: inController,
+            decoration: _fieldDecoration(
+                'Enter Your Height (in Inches)', Icons.height),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: calculate,
+            style: FilledButton.styleFrom(
+              backgroundColor: teal,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: wtController,
-              decoration: const InputDecoration(
-                labelText: 'Enter Your weight (in Kgs)',
-                prefixIcon: Icon(Icons.line_weight),
-                border: OutlineInputBorder(),
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
+            child: const Text('Calculate BMI',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+          ),
+          if (result.isNotEmpty) ...[
             const SizedBox(height: 12),
-            TextField(
-              controller: ftController,
-              decoration: const InputDecoration(
-                labelText: 'Enter Your Height (in Feet)',
-                prefixIcon: Icon(Icons.height),
-                border: OutlineInputBorder(),
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: inController,
-              decoration: const InputDecoration(
-                labelText: 'Enter Your Height (in Inches)',
-                prefixIcon: Icon(Icons.height),
-                border: OutlineInputBorder(),
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: calculate,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('Calculate', style: TextStyle(fontSize: 18)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (result.isNotEmpty)
-              Text(
-                result,
+            Text(result,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w500),
-              ),
-            if (bmiValue != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                healthyRangeText(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14),
-              ),
-            ],
+                    fontSize: 15, fontWeight: FontWeight.w600, color: ink)),
           ],
-        ),
+        ],
       ),
     );
 
-    final resultCard = Card(
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(padding),
-        child: Column(
-          children: [
-            buildAvatar(),
-            if (planSteps.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Text(
-                planTitle,
+    final resultCard = _softCard(
+      child: Column(
+        children: [
+          _ringGauge(),
+          const SizedBox(height: 8),
+          if (bmiValue != null)
+            Text(healthyRangeText(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: muted)),
+          const SizedBox(height: 16),
+          _avatar(),
+          if (planSteps.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(planTitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w700),
+                    fontSize: 18, fontWeight: FontWeight.w800, color: ink)),
+            const SizedBox(height: 12),
+            _planCard(
+              title: 'Plan',
+              icon: Icons.checklist,
+              color: teal,
+              tint: const Color(0xFFE6F4F2),
+              items: planSteps,
+            ),
+            const SizedBox(height: 12),
+            _planCard(
+              title: 'Kya khayein',
+              icon: Icons.restaurant,
+              color: const Color(0xFF059669),
+              tint: const Color(0xFFECFDF5),
+              items: eatList,
+            ),
+            const SizedBox(height: 12),
+            _planCard(
+              title: 'Kya NA khayein',
+              icon: Icons.block,
+              color: const Color(0xFFDC2626),
+              tint: const Color(0xFFFEF2F2),
+              items: avoidList,
+            ),
+            const SizedBox(height: 12),
+            _softCard(
+              tint: const Color(0xFFFFFBEB),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Sample 1-day menu',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: ink)),
+                  const SizedBox(height: 6),
+                  Text(sampleMenu,
+                      style: const TextStyle(fontSize: 14, color: ink)),
+                ],
               ),
-              const SizedBox(height: 12),
-              buildList('Plan', planSteps, Icons.check_circle,
-                  Colors.green),
-              const SizedBox(height: 12),
-              buildList('Kya khayein', eatList, Icons.restaurant,
-                  Colors.green),
-              const SizedBox(height: 12),
-              buildList('Kya NA khayein', avoidList, Icons.block,
-                  Colors.red),
-              const SizedBox(height: 12),
-              const Text('Sample 1-day menu',
-                  style:
-                      TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(sampleMenu),
-              const SizedBox(height: 8),
-              const Text(
-                'BMI is a screening measure, not a diagnosis. '
-                'For a personal diet/exercise plan, consult a doctor.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'BMI is a screening measure, not a diagnosis. '
+              'For a personal diet/exercise plan, consult a doctor.',
+              style: TextStyle(fontSize: 12, color: muted),
+              textAlign: TextAlign.center,
+            ),
+          ] else
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Text(
+                'Weight aur height daal kar Calculate dabayein — '
+                'category, avatar aur plan yahan dikhe ga.',
                 textAlign: TextAlign.center,
+                style: TextStyle(color: muted),
               ),
-            ] else
-              const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Text(
-                  'Weight aur height daal kar Calculate dabayein — '
-                  'category, avatar aur plan yahan dikhe ga.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('BMI Calculator')),
+      appBar: AppBar(
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.monitor_weight, color: teal),
+            SizedBox(width: 8),
+            Text('BMI Calculator',
+                style: TextStyle(fontWeight: FontWeight.w800)),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
@@ -450,14 +686,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: calculatorCard),
+                        Expanded(child: inputCard),
                         const SizedBox(width: 16),
                         Expanded(child: resultCard),
                       ],
                     )
                   : Column(
                       children: [
-                        calculatorCard,
+                        inputCard,
                         const SizedBox(height: 16),
                         resultCard,
                       ],
@@ -468,4 +704,40 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+}
+
+class _RingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  const _RingPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 10;
+    final bg = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, bg);
+    if (progress > 0) {
+      final fg = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 14
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        progress * 2 * math.pi,
+        false,
+        fg,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress || old.color != color;
 }
