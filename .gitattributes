@@ -1,0 +1,11 @@
+# Platform folders are Flutter template code, not the app's own code.
+# Mark them as vendored so GitHub's language stats ignore them
+# and the repo shows Dart (the real app code in lib/main.dart).
+windows/** linguist-vendored
+linux/** linguist-vendored
+macos/** linguist-vendored
+ios/** linguist-vendored
+android/** linguist-vendored
+web/** linguist-vendored
+*.cmake linguist-vendored
+CMakeLists.txt linguist-vendored
