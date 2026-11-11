@@ -7,6 +7,12 @@ import 'package:flutter/material.dart';
 // full-body avatar image, and plan split into 3 cards.
 // Same BMI logic as before: weight kg, height ft+in,
 // BMI = kg / m^2, decimal inputs via double.tryParse.
+//
+// Language option (added 2026-11-11): English / Roman Urdu toggle
+// in the AppBar. Default is Roman Urdu. The toggle switches every
+// visible text in the app — labels, button, messages, categories,
+// plans, menus and the disclaimer. The BMI calculation, category
+// keys, colours, avatar images and layout are unchanged.
 
 void main() {
   runApp(const MyApp());
@@ -32,7 +38,7 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.white,
           foregroundColor: Color(0xFF0F172A),
           elevation: 0,
-          centerTitle: true,
+          centerTitle: false,
         ),
         sliderTheme: const SliderThemeData(
           activeTrackColor: teal,
@@ -66,6 +72,9 @@ class _MyHomePageState extends State<MyHomePage> {
   double heightFtSlider = 5;
   double heightInSlider = 7;
 
+  // Language: true = Roman Urdu (default), false = English.
+  bool _isUrdu = true;
+
   String result = '';
   String category = '';
   String planTitle = '';
@@ -93,6 +102,45 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  // ---- Language helpers ----
+
+  /// Returns the Roman Urdu text when _isUrdu is true, else English.
+  String tr(String en, String ur) => _isUrdu ? ur : en;
+
+  /// Display name for a category key. In Roman Urdu mode the English
+  /// term stays in brackets so the user learns both names.
+  String categoryLabel(String key) {
+    switch (key) {
+      case 'Underweight':
+        return tr('Underweight', 'Kam Wazan (Underweight)');
+      case 'Healthy weight':
+        return tr('Healthy weight', 'Sehatmand (Healthy)');
+      case 'Overweight':
+        return tr('Overweight', 'Zyada Wazan (Overweight)');
+      case 'Obesity':
+        return tr('Obesity', 'Motapa (Obesity)');
+      default:
+        return key;
+    }
+  }
+
+  /// Switch language and re-translate the current result/plan, if any.
+  void _setLanguage(bool urdu) {
+    setState(() {
+      _isUrdu = urdu;
+      if (bmiValue != null) {
+        result = tr(
+          'Your BMI is ${bmiValue!.toStringAsFixed(2)}',
+          'Aapka BMI ${bmiValue!.toStringAsFixed(2)} hai',
+        );
+        setPlan(bmiValue!);
+      }
+    });
+  }
+
+  // ---- BMI logic (unchanged) ----
+
+  /// Internal category key — never shown directly; use categoryLabel().
   String getCategory(double bmi) {
     if (bmi < 18.5) return 'Underweight';
     if (bmi < 25) return 'Healthy weight';
@@ -135,88 +183,159 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void setPlan(double bmi) {
     if (bmi < 18.5) {
-      planTitle = 'Underweight → Healthy kaise bane';
+      planTitle = tr(
+        'How to go from Underweight to Healthy',
+        'Underweight → Healthy kaise bane',
+      );
       planSteps = [
-        'Roz 300–500 extra calories khayein (slowly badhayein).',
-        'Har meal mein protein: ande, daal, doodh, dahi, gosht.',
-        'Hafte mein 3 din strength exercise: push-ups, squats.',
-        'Neend 7–8 ghante, paani zyada piyen.',
+        tr(
+          'Eat 300–500 extra calories every day (increase slowly).',
+          'Roz 300–500 extra calories khayein (slowly badhayein).',
+        ),
+        tr(
+          'Include protein in every meal: eggs, lentils, milk, yogurt, meat.',
+          'Har meal mein protein: ande, daal, doodh, dahi, gosht.',
+        ),
+        tr(
+          'Do strength exercise 3 days a week: push-ups, squats.',
+          'Hafte mein 3 din strength exercise: push-ups, squats.',
+        ),
+        tr(
+          'Sleep 7–8 hours and drink plenty of water.',
+          'Neend 7–8 ghante, paani zyada piyen.',
+        ),
       ];
       eatList = [
-        'Doodh, dahi, ande',
-        'Daal, chane, gosht',
-        'Dry fruits: badam, akhrot',
-        'Roti, chawal, aloo',
+        tr('Milk, yogurt, eggs', 'Doodh, dahi, ande'),
+        tr('Lentils, chickpeas, meat', 'Daal, chane, gosht'),
+        tr('Dry fruits: almonds, walnuts', 'Dry fruits: badam, akhrot'),
+        tr('Bread, rice, potatoes', 'Roti, chawal, aloo'),
       ];
       avoidList = [
-        'Khana skip karna',
-        'Sirf chai / snacks par guzara',
-        'Zyada fast food (empty calories)',
+        tr('Skipping meals', 'Khana skip karna'),
+        tr('Living only on tea / snacks', 'Sirf chai / snacks par guzara'),
+        tr(
+          'Too much fast food (empty calories)',
+          'Zyada fast food (empty calories)',
+        ),
       ];
-      sampleMenu =
-          'Nashta: doodh + ande + paratha. Lunch: daal + chawal + dahi. Shaam: dry fruits + doodh. Dinner: gosht/sabzi + roti.';
+      sampleMenu = tr(
+        'Breakfast: milk + eggs + paratha. Lunch: lentils + rice + yogurt. Evening: dry fruits + milk. Dinner: meat/vegetables + bread.',
+        'Nashta: doodh + ande + paratha. Lunch: daal + chawal + dahi. Shaam: dry fruits + doodh. Dinner: gosht/sabzi + roti.',
+      );
     } else if (bmi < 25) {
-      planTitle = 'Healthy → Stronger kaise bane';
+      planTitle = tr(
+        'How to go from Healthy to Stronger',
+        'Healthy → Stronger kaise bane',
+      );
       planSteps = [
-        'Protein har meal mein rakhein (ande, daal, doodh, gosht).',
-        'Hafte mein 4 din strength training + roz 30 min walk.',
-        'Meetha aur cold drink kam kar dein.',
-        'Neend 7–8 ghante — muscle neend mein banta hai.',
+        tr(
+          'Keep protein in every meal (eggs, lentils, milk, yogurt, meat).',
+          'Protein har meal mein rakhein (ande, daal, doodh, gosht).',
+        ),
+        tr(
+          'Do strength training 4 days a week + walk 30 minutes every day.',
+          'Hafte mein 4 din strength training + roz 30 min walk.',
+        ),
+        tr(
+          'Cut down on sweets and cold drinks.',
+          'Meetha aur cold drink kam kar dein.',
+        ),
+        tr(
+          'Sleep 7–8 hours — muscles are built during sleep.',
+          'Neend 7–8 ghante — muscle neend mein banta hai.',
+        ),
       ];
       eatList = [
-        'Ande, doodh, dahi',
-        'Daal, chane, gosht',
-        'Sabzi, fruit, dry fruits',
+        tr('Eggs, milk, yogurt', 'Ande, doodh, dahi'),
+        tr('Lentils, chickpeas, meat', 'Daal, chane, gosht'),
+        tr('Vegetables, fruit, dry fruits', 'Sabzi, fruit, dry fruits'),
       ];
       avoidList = [
-        'Roz cold drink / meetha',
-        'Zyada oily fast food',
-        'Late night heavy khana',
+        tr('Cold drink / sweets every day', 'Roz cold drink / meetha'),
+        tr('Too much oily fast food', 'Zyada oily fast food'),
+        tr('Heavy food late at night', 'Late night heavy khana'),
       ];
-      sampleMenu =
-          'Nashta: ande + doodh. Lunch: daal + roti + salad. Shaam: fruit + dahi. Dinner: gosht/sabzi + roti.';
+      sampleMenu = tr(
+        'Breakfast: eggs + milk. Lunch: lentils + bread + salad. Evening: fruit + yogurt. Dinner: meat/vegetables + bread.',
+        'Nashta: ande + doodh. Lunch: daal + roti + salad. Shaam: fruit + dahi. Dinner: gosht/sabzi + roti.',
+      );
     } else if (bmi < 30) {
-      planTitle = 'Overweight → Healthy kaise bane';
+      planTitle = tr(
+        'How to go from Overweight to Healthy',
+        'Overweight → Healthy kaise bane',
+      );
       planSteps = [
-        'Roz 300–500 calories kam khayein — aahista, crash diet nahi.',
-        'Roz 30–45 min tez walk, hafte mein 5 din.',
-        'Roti/chawal thora kam, sabzi/salad zyada.',
-        'Har hafte weight check karein, target 0.5 kg/week.',
+        tr(
+          'Eat 300–500 fewer calories every day — slowly, no crash diet.',
+          'Roz 300–500 calories kam khayein — aahista, crash diet nahi.',
+        ),
+        tr(
+          'Walk briskly for 30–45 minutes, 5 days a week.',
+          'Roz 30–45 min tez walk, hafte mein 5 din.',
+        ),
+        tr(
+          'Eat a little less bread/rice and more vegetables/salad.',
+          'Roti/chawal thora kam, sabzi/salad zyada.',
+        ),
+        tr(
+          'Check your weight every week, target 0.5 kg/week.',
+          'Har hafte weight check karein, target 0.5 kg/week.',
+        ),
       ];
       eatList = [
-        'Sabzi, salad, fruit',
-        'Daal, dahi (low fat)',
-        'Paani zyada, green tea',
+        tr('Vegetables, salad, fruit', 'Sabzi, salad, fruit'),
+        tr('Lentils, yogurt (low fat)', 'Daal, dahi (low fat)'),
+        tr('Plenty of water, green tea', 'Paani zyada, green tea'),
       ];
       avoidList = [
-        'Cold drink / meetha / mithai',
-        'Fast food: burger, fries, pizza',
-        'Zyada tel / ghee wala khana',
-        'Late night snacking',
+        tr('Cold drink / sweets / mithai', 'Cold drink / meetha / mithai'),
+        tr('Fast food: burger, fries, pizza', 'Fast food: burger, fries, pizza'),
+        tr('Too much oily / ghee food', 'Zyada tel / ghee wala khana'),
+        tr('Snacking late at night', 'Late night snacking'),
       ];
-      sampleMenu =
-          'Nashta: ande + doodh (low fat). Lunch: daal + 1 roti + salad. Shaam: fruit. Dinner: sabzi + 1 roti + dahi.';
+      sampleMenu = tr(
+        'Breakfast: eggs + milk (low fat). Lunch: lentils + 1 bread + salad. Evening: fruit. Dinner: vegetables + 1 bread + yogurt.',
+        'Nashta: ande + doodh (low fat). Lunch: daal + 1 roti + salad. Shaam: fruit. Dinner: sabzi + 1 roti + dahi.',
+      );
     } else {
-      planTitle = 'Obesity → Healthy kaise bane';
+      planTitle = tr(
+        'How to go from Obesity to Healthy',
+        'Obesity → Healthy kaise bane',
+      );
       planSteps = [
-        'Doctor / dietitian se mashwara zaroor lein, phir plan shuru karein.',
-        'Roz 30 min walk se shuru karein, aahista badhayein.',
-        'Meetha, cold drink aur fast food band kar dein.',
-        'Chhota target rakhein: pehle 5% weight kam karna.',
+        tr(
+          'First consult a doctor / dietitian, then start the plan.',
+          'Doctor / dietitian se mashwara zaroor lein, phir plan shuru karein.',
+        ),
+        tr(
+          'Start with a 30-minute walk every day, then slowly increase it.',
+          'Roz 30 min walk se shuru karein, aahista badhayein.',
+        ),
+        tr(
+          'Stop sweets, cold drinks and fast food.',
+          'Meetha, cold drink aur fast food band kar dein.',
+        ),
+        tr(
+          'Keep a small target: lose 5% of your weight first.',
+          'Chhota target rakhein: pehle 5% weight kam karna.',
+        ),
       ];
       eatList = [
-        'Sabzi, salad, fruit',
-        'Daal, dahi (low fat)',
-        'Paani zyada',
+        tr('Vegetables, salad, fruit', 'Sabzi, salad, fruit'),
+        tr('Lentils, yogurt (low fat)', 'Daal, dahi (low fat)'),
+        tr('Plenty of water', 'Paani zyada'),
       ];
       avoidList = [
-        'Cold drink / meetha / mithai',
-        'Fast food aur bakery items',
-        'Zyada tel / ghee wala khana',
-        'Late night snacking',
+        tr('Cold drink / sweets / mithai', 'Cold drink / meetha / mithai'),
+        tr('Fast food and bakery items', 'Fast food aur bakery items'),
+        tr('Too much oily / ghee food', 'Zyada tel / ghee wala khana'),
+        tr('Snacking late at night', 'Late night snacking'),
       ];
-      sampleMenu =
-          'Nashta: ande + doodh (low fat). Lunch: daal + salad + 1 roti. Shaam: fruit. Dinner: sabzi + dahi.';
+      sampleMenu = tr(
+        'Breakfast: eggs + milk (low fat). Lunch: lentils + salad + 1 bread. Evening: fruit. Dinner: vegetables + yogurt.',
+        'Nashta: ande + doodh (low fat). Lunch: daal + salad + 1 roti. Shaam: fruit. Dinner: sabzi + dahi.',
+      );
     }
   }
 
@@ -235,7 +354,10 @@ class _MyHomePageState extends State<MyHomePage> {
     final inch = inController.text.trim();
     if (wt.isEmpty || ft.isEmpty || inch.isEmpty) {
       setState(() {
-        result = 'Please fill all the required blanks';
+        result = tr(
+          'Please fill all the required blanks',
+          'Saare khaali boxes bhar dein',
+        );
         category = '';
         bmiValue = null;
         planSteps = [];
@@ -252,7 +374,10 @@ class _MyHomePageState extends State<MyHomePage> {
     if (dWt == null || dFt == null || dInch == null ||
         dWt <= 0 || dFt <= 0 || dInch < 0) {
       setState(() {
-        result = 'Please enter valid numbers';
+        result = tr(
+          'Please enter valid numbers',
+          'Sahi numbers daalein',
+        );
         category = '';
         bmiValue = null;
         planSteps = [];
@@ -270,7 +395,10 @@ class _MyHomePageState extends State<MyHomePage> {
       weightKg = dWt;
       heightM = tM;
       bmiValue = bmi;
-      result = 'Your BMI is ${bmi.toStringAsFixed(2)}';
+      result = tr(
+        'Your BMI is ${bmi.toStringAsFixed(2)}',
+        'Aapka BMI ${bmi.toStringAsFixed(2)} hai',
+      );
       category = getCategory(bmi);
       _syncSlidersFromFields();
       setPlan(bmi);
@@ -284,11 +412,23 @@ class _MyHomePageState extends State<MyHomePage> {
     final diff = weightKg == null
         ? ''
         : weightKg! < low
-            ? '${(low - weightKg!).toStringAsFixed(1)} kg badhana hai'
+            ? tr(
+                'You need to gain ${(low - weightKg!).toStringAsFixed(1)} kg',
+                '${(low - weightKg!).toStringAsFixed(1)} kg badhana hai',
+              )
             : weightKg! > high
-                ? '${(weightKg! - high).toStringAsFixed(1)} kg kam karna hai'
-                : 'Healthy range mein hain — strong banein!';
-    return 'Healthy weight: ${low.toStringAsFixed(1)} – ${high.toStringAsFixed(1)} kg  •  $diff';
+                ? tr(
+                    'You need to lose ${(weightKg! - high).toStringAsFixed(1)} kg',
+                    '${(weightKg! - high).toStringAsFixed(1)} kg kam karna hai',
+                  )
+                : tr(
+                    'You are in the healthy range — get stronger!',
+                    'Healthy range mein hain — strong banein!',
+                  );
+    return tr(
+      'Healthy weight: ${low.toStringAsFixed(1)} – ${high.toStringAsFixed(1)} kg  •  $diff',
+      'Healthy weight: ${low.toStringAsFixed(1)} – ${high.toStringAsFixed(1)} kg  •  $diff',
+    );
   }
 
   // ---- MediClean widgets ----
@@ -309,6 +449,35 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       padding: const EdgeInsets.all(18),
       child: child,
+    );
+  }
+
+  /// One language chip in the AppBar: "English" or "Roman Urdu".
+  Widget _langChip(String label, bool selected, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? teal : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? teal : cardBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: selected ? Colors.white : ink,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -418,7 +587,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     color: color.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(category,
+                  child: Text(categoryLabel(category),
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -466,8 +635,11 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 6),
           Text(
             category.isEmpty
-                ? 'Avatar — BMI ke hisaab se badle ga'
-                : category,
+                ? tr(
+                    'Avatar — it will change with your BMI',
+                    'Avatar — BMI ke hisaab se badle ga',
+                  )
+                : categoryLabel(category),
             style: TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w700, color: color),
           ),
@@ -508,14 +680,18 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Apna BMI check karein',
-              style: TextStyle(
+          Text(tr('Check your BMI', 'Apna BMI check karein'),
+              style: const TextStyle(
                   fontSize: 20, fontWeight: FontWeight.w800, color: ink)),
-          const Text('Weight aur height daalein — slider se bhi badal sakte hain.',
-              style: TextStyle(fontSize: 13, color: muted)),
+          Text(
+              tr(
+                'Enter your weight and height — you can also change them with the slider.',
+                'Weight aur height daalein — slider se bhi badal sakte hain.',
+              ),
+              style: const TextStyle(fontSize: 13, color: muted)),
           const SizedBox(height: 16),
           _stepperRow(
-            label: 'Weight',
+            label: tr('Weight', 'Wazan'),
             value: '${weightSlider.toStringAsFixed(0)} kg',
             onMinus: () => setState(() {
               weightSlider = (weightSlider - 1).clamp(30, 150);
@@ -541,7 +717,8 @@ class _MyHomePageState extends State<MyHomePage> {
           TextField(
             controller: wtController,
             decoration: _fieldDecoration(
-                'Enter Your weight (in Kgs)', Icons.monitor_weight),
+                tr('Enter your weight (in Kgs)', 'Apna wazan daalein (Kgs mein)'),
+                Icons.monitor_weight),
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => _syncSlidersFromFields(),
@@ -549,8 +726,10 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 12),
           TextField(
             controller: ftController,
-            decoration:
-                _fieldDecoration('Enter Your Height (in Feet)', Icons.height),
+            decoration: _fieldDecoration(
+                tr('Enter your height (in Feet)',
+                    'Apni height daalein (Feet mein)'),
+                Icons.height),
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
           ),
@@ -558,7 +737,9 @@ class _MyHomePageState extends State<MyHomePage> {
           TextField(
             controller: inController,
             decoration: _fieldDecoration(
-                'Enter Your Height (in Inches)', Icons.height),
+                tr('Enter your height (in Inches)',
+                    'Apni height daalein (Inches mein)'),
+                Icons.height),
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
           ),
@@ -571,8 +752,8 @@ class _MyHomePageState extends State<MyHomePage> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
             ),
-            child: const Text('Calculate BMI',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            child: Text(tr('Calculate BMI', 'BMI Calculate Karein'),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
           ),
           if (result.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -604,7 +785,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     fontSize: 18, fontWeight: FontWeight.w800, color: ink)),
             const SizedBox(height: 12),
             _planCard(
-              title: 'Plan',
+              title: tr('Plan', 'Plan'),
               icon: Icons.checklist,
               color: teal,
               tint: const Color(0xFFE6F4F2),
@@ -612,7 +793,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 12),
             _planCard(
-              title: 'Kya khayein',
+              title: tr('What to eat', 'Kya khayein'),
               icon: Icons.restaurant,
               color: const Color(0xFF059669),
               tint: const Color(0xFFECFDF5),
@@ -620,7 +801,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 12),
             _planCard(
-              title: 'Kya NA khayein',
+              title: tr('What NOT to eat', 'Kya NA khayein'),
               icon: Icons.block,
               color: const Color(0xFFDC2626),
               tint: const Color(0xFFFEF2F2),
@@ -632,8 +813,8 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Sample 1-day menu',
-                      style: TextStyle(
+                  Text(tr('Sample 1-day menu', 'Sample 1-day menu'),
+                      style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: ink)),
@@ -644,20 +825,28 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'BMI is a screening measure, not a diagnosis. '
-              'For a personal diet/exercise plan, consult a doctor.',
-              style: TextStyle(fontSize: 12, color: muted),
+            Text(
+              tr(
+                'BMI is a screening measure, not a diagnosis. '
+                'For a personal diet/exercise plan, consult a doctor.',
+                'BMI sirf ek screening measure hai, diagnosis nahi. '
+                'Apne liye diet/exercise plan ke liye doctor se mashwara lein.',
+              ),
+              style: const TextStyle(fontSize: 12, color: muted),
               textAlign: TextAlign.center,
             ),
           ] else
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
-                'Weight aur height daal kar Calculate dabayein — '
-                'category, avatar aur plan yahan dikhe ga.',
+                tr(
+                  'Enter your weight and height and press Calculate — '
+                  'your category, avatar and plan will appear here.',
+                  'Weight aur height daal kar Calculate dabayein — '
+                  'category, avatar aur plan yahan dikhe ga.',
+                ),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: muted),
+                style: const TextStyle(color: muted),
               ),
             ),
         ],
@@ -670,11 +859,16 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.monitor_weight, color: teal),
-            SizedBox(width: 8),
+            SizedBox(width: 6),
             Text('BMI Calculator',
-                style: TextStyle(fontWeight: FontWeight.w800)),
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
           ],
         ),
+        actions: [
+          _langChip('English', !_isUrdu, () => _setLanguage(false)),
+          _langChip('Roman Urdu', _isUrdu, () => _setLanguage(true)),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         child: Center(
