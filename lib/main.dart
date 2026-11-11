@@ -74,20 +74,22 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  // Body width of the full-body avatar, animated by category.
-  double getAvatarWidth() {
+  // Real full-body avatar image for the category.
+  // Underweight has no separate image (its generation failed), so the
+  // healthy image is shown squeezed thin (scaleX 0.62) as a fallback.
+  String getAvatarAsset() {
     switch (category) {
-      case 'Underweight':
-        return 64;
-      case 'Healthy weight':
-        return 96;
       case 'Overweight':
-        return 128;
+        return 'assets/images/overweight.webp';
       case 'Obesity':
-        return 158;
+        return 'assets/images/obesity.webp';
       default:
-        return 96;
+        return 'assets/images/healthy.webp';
     }
+  }
+
+  double getAvatarScaleX() {
+    return category == 'Underweight' ? 0.62 : 1.0;
   }
 
   void setPlan(double bmi) {
@@ -239,58 +241,32 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget buildAvatar() {
-    // Full-body avatar: head, flexing arms, green tank top, blue pants.
-    // Width animates with the category — thin → athletic → heavy.
-    final w = getAvatarWidth();
+    // Real full-body strong-man avatar image (green tank top, blue pants,
+    // both arms flexing). Image changes with the category, with a smooth
+    // AnimatedSwitcher fade/scale animation. Underweight reuses the
+    // healthy image squeezed thin — see getAvatarAsset().
     final color = getCategoryColor(category);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Head
-        const CircleAvatar(
-          radius: 22,
-          backgroundColor: Color(0xFFF2C89B),
-          child: Icon(Icons.person, size: 30, color: Colors.brown),
-        ),
-        const SizedBox(height: 4),
-        // Flexing arms + body
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.fitness_center,
-                size: 28, color: Colors.orange),
-            const SizedBox(width: 6),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeInOut,
-              width: w,
-              height: 110,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black26),
-              ),
-              child: const Center(
-                child: Icon(Icons.sports_gymnastics,
-                    size: 44, color: Colors.white),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 600),
+          transitionBuilder: (child, animation) =>
+              ScaleTransition(scale: animation, child: child),
+          child: Transform.scale(
+            key: ValueKey(category),
+            scaleX: getAvatarScaleX(),
+            child: Image.asset(
+              getAvatarAsset(),
+              key: ValueKey(getAvatarAsset()),
+              height: 260,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.person,
+                size: 120,
+                color: Colors.grey,
               ),
             ),
-            const SizedBox(width: 6),
-            const Icon(Icons.fitness_center,
-                size: 28, color: Colors.orange),
-          ],
-        ),
-        const SizedBox(height: 4),
-        // Legs (blue pants)
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOut,
-          width: w * 0.8,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Colors.blue[800],
-            borderRadius: BorderRadius.circular(10),
           ),
         ),
         const SizedBox(height: 8),
