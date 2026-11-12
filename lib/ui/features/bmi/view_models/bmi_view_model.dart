@@ -106,20 +106,29 @@ class BmiViewModel extends ChangeNotifier {
     return 'Age: $age  •  ${gender.label}';
   }
 
-  /// Full-body avatar image for the current category.
+  /// Gender the avatar is drawn for: the gender captured with the
+  /// latest result when one exists (so the avatar matches the
+  /// calculated result), otherwise the currently selected gender.
+  Gender get avatarGender => _resultGender ?? _gender;
+
+  /// Full-body avatar image for the current category and gender.
   ///
-  /// Underweight has no separate image (its generation failed), so the
-  /// healthy image is used and squeezed thin (see [avatarScaleX]).
+  /// Male uses the strong-man images, Female the matching female
+  /// images. Underweight has no separate image for either gender
+  /// (its generation failed), so the healthy image is used and
+  /// squeezed thin (see [avatarScaleX]).
   String get avatarAsset {
+    final String prefix =
+        avatarGender == Gender.female ? 'female-' : '';
     switch (category) {
       case BmiCategory.overweight:
-        return 'assets/images/overweight.webp';
+        return 'assets/images/${prefix}overweight.webp';
       case BmiCategory.obesity:
-        return 'assets/images/obesity.webp';
+        return 'assets/images/${prefix}obesity.webp';
       case BmiCategory.underweight:
       case BmiCategory.healthyWeight:
       case null:
-        return 'assets/images/healthy.webp';
+        return 'assets/images/${prefix}healthy.webp';
     }
   }
 
