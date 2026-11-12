@@ -26,6 +26,25 @@ enum BmiCategory {
   }
 }
 
+/// The gender selected by the user on the input card.
+///
+/// Display-only: it is shown next to the age in the result area and
+/// does not affect the BMI formula, the category, the healthy-weight
+/// range, or the plan content.
+enum Gender {
+  male,
+  female;
+
+  String get label {
+    switch (this) {
+      case Gender.male:
+        return 'Male';
+      case Gender.female:
+        return 'Female';
+    }
+  }
+}
+
 /// Per-category guidance content: plan steps, what to eat, what to avoid,
 /// and a sample 1-day menu. Pure data, supplied by [PlanRepository].
 ///
