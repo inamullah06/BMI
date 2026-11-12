@@ -62,6 +62,9 @@ flutter:
     - assets/images/healthy.webp
     - assets/images/overweight.webp
     - assets/images/obesity.webp
+    - assets/images/female-healthy.webp
+    - assets/images/female-overweight.webp
+    - assets/images/female-obesity.webp
 
   # To add custom fonts to your application, add a fonts section here, in
   # this "flutter" section. Each entry in this list should have a
