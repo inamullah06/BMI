@@ -1,16 +1,18 @@
+import 'package:bmi/domain/models/bmi_result.dart';
 import 'package:bmi/ui/core/app_theme.dart';
 import 'package:bmi/ui/core/widgets/soft_card.dart';
 import 'package:bmi/ui/features/bmi/view_models/bmi_view_model.dart';
 import 'package:bmi/ui/features/bmi/widgets/stepper_row.dart';
 import 'package:flutter/material.dart';
 
-/// The input card: weight stepper + slider synced with the weight
-/// field, height feet/inches fields, the Calculate button, and the
-/// result/validation message line.
+/// The input card: gender buttons, age stepper + slider + field,
+/// weight stepper + slider synced with the weight field, height
+/// feet/inches fields, the Calculate button, and the result/validation
+/// message line.
 ///
-/// Widget keys (`weightField`, `feetField`, `inchesField`,
-/// `calculateButton`) exist so widget tests can find the inputs
-/// reliably; they change nothing on screen.
+/// Widget keys (`maleChip`, `femaleChip`, `ageField`, `weightField`,
+/// `feetField`, `inchesField`, `calculateButton`) exist so widget
+/// tests can find the inputs reliably; they change nothing on screen.
 class BmiInputCard extends StatelessWidget {
   const BmiInputCard({
     super.key,
@@ -43,6 +45,48 @@ class BmiInputCard extends StatelessWidget {
     );
   }
 
+  /// One large gender button: the gender symbol icon + label, teal
+  /// filled with white text when selected, bordered outline with ink
+  /// text when not — matching the MediClean theme in both Light and
+  /// Dark modes.
+  Widget _genderButton(Key key, Gender value) {
+    final bool selected = viewModel.gender == value;
+    final IconData icon = value == Gender.male ? Icons.male : Icons.female;
+    final Color contentColor = selected ? Colors.white : colors.inkColor;
+    return Expanded(
+      child: InkWell(
+        key: key,
+        onTap: () => viewModel.setGender(value),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: selected ? MediCleanColors.teal : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: BorderSide(
+              color: selected ? MediCleanColors.teal : colors.borderColor,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(icon, color: contentColor),
+              const SizedBox(width: 6),
+              Text(
+                value.label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: contentColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String resultMessage = viewModel.resultMessage;
@@ -62,6 +106,53 @@ class BmiInputCard extends StatelessWidget {
           Text(
             'Enter your weight and height — you can also change them with the slider.',
             style: TextStyle(fontSize: 13, color: colors.mutedColor),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Gender',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: colors.inkColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              _genderButton(const Key('maleChip'), Gender.male),
+              const SizedBox(width: 12),
+              _genderButton(const Key('femaleChip'), Gender.female),
+            ],
+          ),
+          const SizedBox(height: 16),
+          StepperRow(
+            colors: colors,
+            label: 'Age (Years)',
+            value: '${viewModel.ageSlider.toStringAsFixed(0)} years',
+            onMinus: () => viewModel.stepAge(-1),
+            onPlus: () => viewModel.stepAge(1),
+          ),
+          Slider(
+            value: viewModel.ageSlider,
+            min: 5,
+            max: 120,
+            divisions: 115,
+            activeColor: MediCleanColors.teal,
+            inactiveColor: colors.sliderInactive,
+            label: '${viewModel.ageSlider.toStringAsFixed(0)} years',
+            onChanged: viewModel.setAgeFromSlider,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: const Key('ageField'),
+            controller: viewModel.ageController,
+            style: TextStyle(color: colors.inkColor),
+            decoration: _fieldDecoration(
+              'Enter your age (5 to 120 years)',
+              Icons.cake,
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (_) => viewModel.syncSlidersFromFields(),
           ),
           const SizedBox(height: 16),
           StepperRow(

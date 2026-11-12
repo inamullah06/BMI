@@ -7,7 +7,8 @@ import 'package:bmi/ui/features/bmi/widgets/plan_card.dart';
 import 'package:bmi/ui/features/bmi/widgets/ring_gauge.dart';
 import 'package:flutter/material.dart';
 
-/// The result card: ring gauge, healthy-range line, avatar, and —
+/// The result card: ring gauge, healthy-range line, age/gender line,
+/// avatar, and —
 /// once a calculation exists — the plan title, the Plan / What to
 /// eat / What NOT to eat cards, the sample 1-day menu card, and the
 /// screening disclaimer. Before the first calculation it shows the
@@ -38,6 +39,14 @@ class BmiResultCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: colors.mutedColor),
             ),
+          if (result != null && viewModel.profileLine.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 4),
+            Text(
+              viewModel.profileLine,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: colors.mutedColor),
+            ),
+          ],
           const SizedBox(height: 16),
           BmiAvatar(colors: colors, viewModel: viewModel),
           if (plan != null) ...<Widget>[
